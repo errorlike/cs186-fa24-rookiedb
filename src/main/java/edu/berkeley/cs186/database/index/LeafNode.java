@@ -371,15 +371,31 @@ class LeafNode extends BPlusNode {
      * Loads a leaf node from page `pageNum`.
      */
     public static LeafNode fromBytes(BPlusTreeMetadata metadata, BufferManager bufferManager,
-                                     LockContext treeContext, long pageNum) {
+            LockContext treeContext, long pageNum) {
         // TODO(proj2): implement
         // Note: LeafNode has two constructors. To implement fromBytes be sure to
         // use the constructor that reuses an existing page instead of fetching a
         // brand new one.
+        // 叶子节点和根节点的区别：
+        // 1.叶子节点没有子节点，有兄弟节点的指针。
+        // 2.叶子节点保存(key record)这样的对
+        Page page = bufferManager.fetchPage(treeContext, pageNum);
+        Buffer buf = page.getBuffer();
 
-        return null;
+        byte nodeType = buf.get();
+        // 叶子节点的字面量为1
+        assert (nodeType == (byte) 1);
+
+        List<DataBox> keys = new ArrayList<>();
+        List<RecordId> recordIds = new ArrayList<>();
+        Optional<Long> rightSibling = Optional.of(buf.getLong());
+        int number = buf.getInt();
+        for (int i = 0; i < number; ++i) {
+            keys.add(DataBox.fromBytes(buf, metadata.getKeySchema()));
+            recordIds.add(RecordId.fromBytes(buf));
+        }
+        return new LeafNode(metadata, bufferManager, page, keys,recordIds,rightSibling,treeContext);
     }
-
     // Builtins ////////////////////////////////////////////////////////////////
     @Override
     public boolean equals(Object o) {
