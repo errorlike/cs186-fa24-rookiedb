@@ -96,9 +96,38 @@ class InnerNode extends BPlusNode {
     // See BPlusNode.put.
     @Override
     public Optional<Pair<DataBox, Long>> put(DataBox key, RecordId rid) {
-        // TODO(proj2): implement
+        // 找到要插入key的LeafNode
+        int d = metadata.getOrder();
+        BPlusNode child = BPlusNode.fromBytes(metadata, bufferManager, treeContext, children.get(numLessThanEqual(key, keys)));
+        Optional<Pair<DataBox, Long>> split = child.put(key, rid);
+        if (!split.isPresent()) {
+            return Optional.empty();
+        } else {
+            // 返回分裂key
+            int location = numLessThan(key, keys);
+            DataBox splitKey = split.get().getFirst();
+            keys.add(location, splitKey);
+            children.add(location + 1, split.get().getSecond());
+            if (keys.size() <= 2 * d) {
+                sync();
+                return Optional.empty();
+            } else {
+                DataBox newSplitKey = keys.get(d);
+                List<DataBox>leftKeys = keys.subList(0, d);
+                List<Long> leftChildren = children.subList(0,d+1 );
 
-        return Optional.empty();
+                List<DataBox>rightKeys = keys.subList(d+1,keys.size());
+                List<Long> rightChildren = children.subList(d+1,children.size());
+
+                this.keys = leftKeys;
+                this.children = leftChildren;
+                InnerNode right = new InnerNode(metadata, bufferManager, rightKeys, rightChildren, treeContext);
+                // System.out.println(right.toSexp());
+                sync();
+                return Optional.of(new Pair<DataBox,Long>(newSplitKey,right.page.getPageNum()));
+            }
+        }
+
     }
 
     // See BPlusNode.bulkLoad.

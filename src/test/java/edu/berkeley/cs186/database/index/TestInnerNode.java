@@ -264,6 +264,28 @@ public class TestInnerNode {
     }
 
     @Test
+    public void testOverflowPuts(){
+
+        inner.put(new IntDataBox(0), new RecordId(0, (short)0));
+        Optional<Pair<DataBox,Long>> splitInfo = inner.put(new IntDataBox(5), new RecordId(5, (short)5));
+        assertFalse(splitInfo.isPresent());
+        keys0.add(0,new IntDataBox(4));
+        rids0.add(0,new RecordId(4,(short)4));
+        keys0 = keys0.subList(0, 2);
+        rids0 = rids0.subList(0, 2);
+        innerKeys.add(0,new IntDataBox(2));
+        System.out.println("inner:" +inner.toDot());
+        assertEquals(innerKeys,inner.getKeys() );
+        assertEquals(innerChildren.size()+1, inner.getChildren().size());
+    }
+    @Test
+    public void testOverflowInnerNode(){
+        for ( int i = 4; i < 10; i++) {
+           inner.put(new IntDataBox(i),new RecordId(i,(short)i));
+        }
+        System.out.println(inner.toSexp());
+    }
+    @Test
     @Category(PublicTests.class)
     public void testRemove() {
         // Remove from leaf 0.
