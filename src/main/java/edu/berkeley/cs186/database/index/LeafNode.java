@@ -153,16 +153,41 @@ class LeafNode extends BPlusNode {
     @Override
     public LeafNode getLeftmostLeaf() {
         // TODO(proj2): implement
-
-        return null;
+        return this;
     }
 
     // See BPlusNode.put.
     @Override
     public Optional<Pair<DataBox, Long>> put(DataBox key, RecordId rid) {
-        // TODO(proj2): implement
+        if (keys.contains(key)) {
+            throw new BPlusTreeException("duplicate key ");
+        }
+        int d = metadata.getOrder();
+        // 没有重复key，没有相等情况
+        int index = InnerNode.numLessThan(key, keys);
+        keys.add(index, key);
+        rids.add(index, rid);
+        if (keys.size() <= 2 * d) {
+            // 有足够的存储空间,无重复key
+            sync();
+            return Optional.empty();
+        } else {
+            // 节点分割，创建新的page
+            List<DataBox> leftKeys = keys.subList(0, d);
+            List<RecordId> leftRids = rids.subList(0, d);
 
-        return Optional.empty();
+            List<DataBox> rightKeys = keys.subList(d, keys.size());
+            List<RecordId> rightRids = rids.subList(d, rids.size());
+
+            this.keys = leftKeys;
+            this.rids = leftRids;
+
+            LeafNode right = new LeafNode(metadata, bufferManager, rightKeys, rightRids, rightSibling, treeContext);
+            long pageNum = right.getPage().getPageNum();
+            this.rightSibling = Optional.of(pageNum);
+            sync();
+            return Optional.of(new Pair<>(rightKeys.get(0), pageNum));
+        }
     }
 
     // See BPlusNode.bulkLoad.

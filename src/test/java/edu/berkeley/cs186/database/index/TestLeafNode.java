@@ -152,6 +152,21 @@ public class TestLeafNode {
     }
 
     @Test
+public void testOverflowPuts(){
+    int d = 2 ;
+    setBPlusTreeMetadata(Type.intType(), d);
+    LeafNode leaf = getEmptyLeaf(Optional.empty());
+
+    for (int i = 0; i < 2*d; i++) {
+        DataBox key = new IntDataBox(i);
+        RecordId rid= new RecordId(i, (short)i);
+        leaf.put(key,rid);
+    }
+    Optional<Pair<DataBox,Long>> splitInfo = leaf.put(new IntDataBox(2*d),new RecordId(2*d,(short)(2*d)));;
+    assertEquals(new IntDataBox(d),splitInfo.get().getFirst() );
+}
+
+    @Test
     @Category(PublicTests.class)
     public void testNoOverflowPutsFromDisk() {
         // Requires both fromBytes and put to be implemented correctly.
