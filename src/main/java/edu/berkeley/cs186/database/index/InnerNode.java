@@ -142,9 +142,10 @@ class InnerNode extends BPlusNode {
     // See BPlusNode.remove.
     @Override
     public void remove(DataBox key) {
-        // TODO(proj2): implement
-
-        return;
+        int location = numLessThanEqual(key,keys);
+        long pageNum = children.get(location);
+        //递归删除
+        BPlusNode.fromBytes(metadata,bufferManager,treeContext,pageNum).remove(key);
     }
 
     // Helpers /////////////////////////////////////////////////////////////////
