@@ -405,7 +405,34 @@ public class TestBPlusTree {
         r = String.format("(%s 8 %s)", rl, rr);
         assertEquals(String.format("(%s 4 %s 7 %s)", l, m, r), tree.toSexp());
     }
-
+    @Test
+    @Category(PublicTests.class)
+    public void testNoOverflowPuts(){
+        int d = 2;
+        List<DataBox> keys = new ArrayList<>();
+        List<RecordId> rids = new ArrayList<>();
+        BPlusTree tree = getBPlusTree(Type.intType(),d);
+        for ( int i = 0; i < 2*d; i++) {
+            keys.add(new IntDataBox(i));
+            rids.add(new RecordId(i,(short)i));
+            tree.put(new IntDataBox(i),new RecordId(i,(short)i));
+        }
+        assertEquals("((0 (0 0)) (1 (1 1)) (2 (2 2)) (3 (3 3)))",tree.toSexp());
+    }
+    @Test
+    @Category(PublicTests.class)
+    public void testOverflowPuts(){
+        int d = 2;
+        List<DataBox> keys = new ArrayList<>();
+        List<RecordId> rids = new ArrayList<>();
+        BPlusTree tree = getBPlusTree(Type.intType(),d);
+        for ( int i = 0; i < 2*d+1; i++) {
+            keys.add(new IntDataBox(i));
+            rids.add(new RecordId(i,(short)i));
+            tree.put(new IntDataBox(i),new RecordId(i,(short)i));
+        }
+        assertEquals("(((0 (0 0)) (1 (1 1))) 2 ((2 (2 2)) (3 (3 3)) (4 (4 4))))",tree.toSexp());
+    }
     @Test
     @Category(PublicTests.class)
     public void testRandomPuts() {
