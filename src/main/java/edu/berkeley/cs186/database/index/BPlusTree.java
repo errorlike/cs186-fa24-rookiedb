@@ -200,9 +200,7 @@ public class BPlusTree {
         // TODO(proj4_integration): Update the following line
         LockUtil.ensureSufficientLockHeld(lockContext, LockType.NL);
 
-        // TODO(proj2): Return a BPlusTreeIterator.
-
-        return Collections.emptyIterator();
+        return new BPlusTreeIterator(root.getLeftmostLeaf());
     }
 
     /**
@@ -233,9 +231,7 @@ public class BPlusTree {
         // TODO(proj4_integration): Update the following line
         LockUtil.ensureSufficientLockHeld(lockContext, LockType.NL);
 
-        // TODO(proj2): Return a BPlusTreeIterator.
-
-        return Collections.emptyIterator();
+        return new BPlusTreeIterator(root.get(key),key);
     }
 
     /**
@@ -432,20 +428,39 @@ public class BPlusTree {
 
     // Iterator ////////////////////////////////////////////////////////////////
     private class BPlusTreeIterator implements Iterator<RecordId> {
-        // TODO(proj2): Add whatever fields and constructors you want here.
+        LeafNode cursor;
+        Iterator<RecordId> leafIterator;
+
+        public BPlusTreeIterator(LeafNode cursor) {
+            this.cursor = cursor;
+            this.leafIterator = cursor.scanAll();
+        }
+        public BPlusTreeIterator(LeafNode cursor,DataBox key){
+            this.cursor = cursor;
+            this.leafIterator  = cursor.scanGreaterEqual(key);
+        }
 
         @Override
         public boolean hasNext() {
-            // TODO(proj2): implement
-
-            return false;
+            if (leafIterator.hasNext()) {
+                return true;
+            } else {
+                if (cursor.getRightSibling().isPresent()) {
+                    this.cursor = cursor.getRightSibling().get();
+                    this.leafIterator = cursor.scanAll();
+                    return leafIterator.hasNext();
+                }
+                return false;
+            }
         }
 
         @Override
         public RecordId next() {
-            // TODO(proj2): implement
-
-            throw new NoSuchElementException();
+            if (leafIterator.hasNext()) {
+                return leafIterator.next();
+            } else {
+                    throw new NoSuchElementException();
+            }
         }
     }
 }
