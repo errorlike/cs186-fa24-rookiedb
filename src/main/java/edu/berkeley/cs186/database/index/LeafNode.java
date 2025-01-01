@@ -152,7 +152,6 @@ class LeafNode extends BPlusNode {
     // See BPlusNode.getLeftmostLeaf.
     @Override
     public LeafNode getLeftmostLeaf() {
-        // TODO(proj2): implement
         return this;
     }
 
@@ -398,7 +397,6 @@ class LeafNode extends BPlusNode {
      */
     public static LeafNode fromBytes(BPlusTreeMetadata metadata, BufferManager bufferManager,
             LockContext treeContext, long pageNum) {
-        // TODO(proj2): implement
         // Note: LeafNode has two constructors. To implement fromBytes be sure to
         // use the constructor that reuses an existing page instead of fetching a
         // brand new one.
@@ -414,7 +412,8 @@ class LeafNode extends BPlusNode {
 
         List<DataBox> keys = new ArrayList<>();
         List<RecordId> recordIds = new ArrayList<>();
-        Optional<Long> rightSibling = Optional.of(buf.getLong());
+        long result = buf.getLong();
+        Optional<Long> rightSibling =  result ==-1 ? Optional.empty(): Optional.of(result);
         int number = buf.getInt();
         for (int i = 0; i < number; ++i) {
             keys.add(DataBox.fromBytes(buf, metadata.getKeySchema()));
