@@ -104,8 +104,8 @@ class InnerNode extends BPlusNode {
             return Optional.empty();
         } else {
             // 返回分裂key
-            int location = numLessThan(key, keys);
             DataBox splitKey = split.get().getFirst();
+            int location = numLessThan(splitKey, keys);
             keys.add(location, splitKey);
             children.add(location + 1, split.get().getSecond());
             if (keys.size() <= 2 * d) {
@@ -122,7 +122,6 @@ class InnerNode extends BPlusNode {
                 this.keys = leftKeys;
                 this.children = leftChildren;
                 InnerNode right = new InnerNode(metadata, bufferManager, rightKeys, rightChildren, treeContext);
-                // System.out.println(right.toSexp());
                 sync();
                 return Optional.of(new Pair<DataBox,Long>(newSplitKey,right.page.getPageNum()));
             }
@@ -134,8 +133,36 @@ class InnerNode extends BPlusNode {
     @Override
     public Optional<Pair<DataBox, Long>> bulkLoad(Iterator<Pair<DataBox, RecordId>> data,
             float fillFactor) {
-        // TODO(proj2): implement
+        int d = metadata.getOrder();
+        BPlusNode rightMostNode = BPlusNode.fromBytes(metadata, bufferManager, treeContext, children.get(children.size()-1));
+        Optional<Pair<DataBox, Long>> split = rightMostNode.bulkLoad(data, fillFactor);
+        // 子节点分裂
+        if(split.isPresent()) {
+            DataBox splitKey = split.get().getFirst();
+            int location = numLessThanEqual(splitKey, keys);
+            keys.add(location, splitKey);
+            children.add(location + 1, split.get().getSecond());
+            // innernode 分裂
+            if (keys.size() > 2 * d) {
+                DataBox newSplitKey = keys.get(d);
+                List<DataBox> leftKeys = keys.subList(0, d);
+                List<Long> leftChildren = children.subList(0, d + 1);
 
+                List<DataBox> rightKeys = keys.subList(d + 1, keys.size());
+                List<Long> rightChildren = children.subList(d + 1, children.size());
+
+                this.keys = leftKeys;
+                this.children = leftChildren;
+                InnerNode right = new InnerNode(metadata, bufferManager, rightKeys, rightChildren, treeContext);
+                sync();
+                return Optional.of(new Pair<DataBox, Long>(newSplitKey, right.page.getPageNum()));
+            }
+            //批量载入可能未耗尽,向最右节点继续递归遍历：
+            sync();
+            System.out.println(keys);
+            return bulkLoad(data, fillFactor);
+
+        }
         return Optional.empty();
     }
 
